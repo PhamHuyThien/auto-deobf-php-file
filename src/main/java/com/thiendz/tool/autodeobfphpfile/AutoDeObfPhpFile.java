@@ -4,6 +4,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 
 import java.io.*;
+import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -11,48 +12,63 @@ import org.apache.commons.text.StringEscapeUtils;
 
 public class AutoDeObfPhpFile {
     public static void main(String[] args) throws IOException {
-        String path = "\\g88vip\\api\\Account\\getaccountinfo.php";
 
-        String pathFile = "D:\\Xampp\\htdocs" + path;
-        String runScript = "http://localhost/" + path;
-
-//        System.out.println(readFromInputStream(new FileInputStream(new File(pathFile))));
-        File file = new File(pathFile);
-        String textFile = readFromInputStream(new FileInputStream(file));
-        textFile = textFile.replace("eval", "echo");
-        writeFile(file, textFile);
-//        System.exit(0);
-
-        System.setProperty("webdriver.chrome.driver", "D:\\SourceCode\\Java\\auto-deobf-php-file\\chromedriver.exe");
-
+        System.setProperty("webdriver.chrome.driver", "D:\\thienph\\java\\auto-deobf-php-file\\chromedriver.exe");
         WebDriver webDriver = new ChromeDriver();
-        webDriver.get(runScript);
 
-        textFile = webDriver.getPageSource().replaceAll("<html><head></head><body>", "").replaceAll("</body></html>", "");
-        writeFile(file, "<?php " + textFile);
+        Scanner sc = new Scanner(System.in);
+        System.out.print("Nhap path moi: ");
+        String pathAccess = sc.nextLine();
 
-        String regex = "eval\\(\\$.+\\((\\$.+)\\)\\);";
-        Pattern p = Pattern.compile(regex);
-        Matcher m = p.matcher(textFile);
-        if (m.find()) {
-            String varRegex = m.group();
-            int id = varRegex.lastIndexOf("($") + 1;
-            String var = varRegex.substring(id, varRegex.lastIndexOf(")") - 1);
-            System.out.println(varRegex);
-            textFile = textFile.substring(0, textFile.length() - varRegex.length());
-            textFile += " echo base64_decode(" + var + ");";
-            textFile = "<?php " + textFile.replaceAll("\\n", "");
-            textFile = StringEscapeUtils.unescapeHtml4(textFile);
-            writeFile(file, textFile);
-            webDriver.navigate().refresh();
+        boolean exit = true;
+        do {
 
-            textFile = webDriver.getPageSource().replaceAll("<html><head></head><body>", "").replaceAll("</body></html>", "");
-            textFile = textFile.substring(10, textFile.length() - 12);
-            textFile = StringEscapeUtils.unescapeHtml4(textFile);
-            System.out.println(textFile);
-            writeFile(file, "<?" + textFile);
+            System.out.print("Nhap ten file: ");
+            String fileName = sc.nextLine();
+            if (fileName.equals("changePath")) {
+                System.out.print("Nhap path moi: ");
+                pathAccess = sc.nextLine();
+            } else if (fileName.equals("exit")) {
+                exit = false;
+            } else {
+                String path = pathAccess + fileName + ".php";
 
-        }
+                String pathFile = "D:\\Xampp\\htdocs" + path;
+                String runScript = "http://localhost/" + path;
+
+                File file = new File(pathFile);
+                String textFile = readFromInputStream(new FileInputStream(file));
+                textFile = textFile.replace("eval", "echo");
+                writeFile(file, textFile);
+
+                webDriver.get(runScript);
+
+                textFile = webDriver.getPageSource().replaceAll("<html><head></head><body>", "").replaceAll("</body></html>", "");
+                writeFile(file, "<?php " + textFile);
+
+                String regex = "eval\\(\\$.+\\((\\$.+)\\)\\);";
+                Pattern p = Pattern.compile(regex);
+                Matcher m = p.matcher(textFile);
+                if (m.find()) {
+                    String varRegex = m.group();
+                    int id = varRegex.lastIndexOf("($") + 1;
+                    String var = varRegex.substring(id, varRegex.lastIndexOf(")") - 1);
+                    System.out.println(varRegex);
+                    textFile = textFile.substring(0, textFile.length() - varRegex.length());
+                    textFile += " echo base64_decode(" + var + ");";
+                    textFile = "<?php " + textFile.replaceAll("\\n", "");
+                    textFile = StringEscapeUtils.unescapeHtml4(textFile);
+                    writeFile(file, textFile);
+                    webDriver.navigate().refresh();
+
+                    textFile = webDriver.getPageSource().replaceAll("<html><head></head><body>", "").replaceAll("</body></html>", "");
+                    textFile = textFile.substring(10, textFile.length() - 12);
+                    textFile = StringEscapeUtils.unescapeHtml4(textFile);
+                    System.out.println(textFile);
+                    writeFile(file, "<?" + textFile);
+                }
+            }
+        } while (exit);
     }
 
     private static String readFromInputStream(InputStream inputStream)
